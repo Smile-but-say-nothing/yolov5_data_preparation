@@ -138,11 +138,7 @@ def check_deep_file(folder_path):
         else:
             check_deep_file(f_p)
             
-def get_file_prefix(path: str):
-    return os.path.splitext(os.path.split(path)[1])[0]
 
-def get_file_type(path: str):
-    return os.path.splitext(os.path.split(path)[1])[1]
 
 
 if __name__ == '__main__':
