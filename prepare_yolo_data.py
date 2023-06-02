@@ -7,7 +7,7 @@ from PIL import Image
 from tqdm import tqdm
 import glob
 import cv2
-
+from utils import get_file_name, get_file_prefix
 
 def remove(opt):
     print('Run Remove Process!')
