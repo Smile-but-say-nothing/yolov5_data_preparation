@@ -72,24 +72,35 @@ $ python video_extract_frames.py \
 
 ### 裁剪物体图片
 
-对于大图，有时我们需要裁剪出目标物体，也就是将大图变为小图，后续再训练分类模型等。例如，将监控中的环卫员的部分裁剪出来。对于裁剪出的图片，相应的XML文件也要修改并对应生成。
+对于大图，有时我们需要利用在大图上的标注信息，裁剪出目标物体，也就是将大图变为小图，后续再训练分类模型等。例如，将监控中的环卫员，人体的部分裁剪出来。对于裁剪出的图片，相应的XML文件也要修改并对应生成。
 
-在命令行中调用`crop_object.py`：
+**用法：**
 
 ```shell
-$ python crop_object.py --raw_img_path ./raw_imgs/ --dst_img_path ./images/ --raw_anno_path ./raw_annos/ --dst_anno_path ./Annotations/
+$ python crop_object.py \
+		--img_folder_path ./images \
+		--xml_folder_path ./annotations \
+		--save_dir ./output \
+		--width_scaler 0.1 0.4 \
+		--height_scaler 0.05 0.3
 ```
 
-该命令的作用是：根据raw_annos里的XML文件，对raw_imgs里的图片裁剪出所有的物体，并将这些新的图片保存在images中，对应的XML文件保存在Annotations中。
+终端打印以下信息：
 
-![crop_object](./assets/crop_object.jpg)
+```shell
+[INFO] Options: Namespace(height_scaler=[0.05, 0.3], img_folder_path='./images', save_dir='./output', width_scaler=[0.1, 0.4], xml_folder_path='./annotations')     
+[INFO] Find 5000 images.
+[INFO] Cropping: 100%|█████████████████████████████████████████████████████████| 5000/5000 [02:53<00:00, 28.81it/s] 
+[INFO] Crop object regions, Done.
+```
 
 可选参数列表：
 
-- raw_img_path：大图文件夹
-- dst_img_path：目标小图文件夹
-- raw_anno_path：大图标注文件夹
-- dst_anno_path：目标小图文件夹
+- img_folder_path：大图文件夹
+- xml_folder_path：标注文件夹
+- save_dir：保存位置，小图保存至save_dir/images子文件夹，xml保存至save_dir/Annotations子文件夹
+- width_scaler：宽度缩放范围[min, max]，在大图标注框的宽度上随机增加[min * width, max * width]
+- height_scaler：高度缩放范围[min, max]，在大图标注框的高度上随机增加[min * height, max * height]，scaler本质上是对目标区域图像的padding
 
 ### 标注格式转换
 
@@ -188,17 +199,14 @@ python prepare_yolo_data.py --raw_img_path ./raw_imgs --raw_anno_path ./raw_anno
 - prefix：前缀，yolov5所用数据集中必须包含train.txt、val.txt、test.txt三个文本文件，里面要注明图片的位置，建议用绝对路径，因此文本文件里每个图片的位置就是prefix+图片名
 - classes：XML文件可能包含多个类别信息，但我们可能只关心其中的某一些，只有这些才需要生成对应的label文本文件
 
-## TODO
-
-- ~~增加标签统计和标签修改的功能~~
-- ~~完善数据抽帧标注代码逻辑~~
-- 裁剪物体图片代码，提供生成XML文件时的信息
-- 提高README文档的质量
-- ···
-
 ## 更新日志
 
 [2023/05/30] 创建Repo，更新README
+
 [2023/06/02] 更新README，完善数据抽帧标注部分的代码逻辑，增加标注文件的标签统计与标签修改功能
+
+[2023/06/20] 更新README，完善裁剪物体图片代码
+
+## TODO：完善yolov5数据集生成和更新的代码
 
 ## 如果本项目对您有帮助，欢迎点一个:star:！欢迎提出ISSUES，共同完善项目！
