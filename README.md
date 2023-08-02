@@ -85,7 +85,7 @@ $ python crop_object.py \
 		--height_scaler 0.05 0.3
 ```
 
-终端打印以下信息：
+终端打印以下类似信息：
 
 ```shell
 [INFO] Options: Namespace(height_scaler=[0.05, 0.3], img_folder_path='./images', save_dir='./output', width_scaler=[0.1, 0.4], xml_folder_path='./annotations')     
@@ -106,21 +106,30 @@ $ python crop_object.py \
 
 部分数据集提供的标注信息是JSON格式的，而yolov5数据集生成需要的是XML格式，XML格式也较为方便。对于JSON格式转XML格式，我们只需要读取JSON文件，并按结构创建结点，保存在XML文件里即可。
 
+以下程序是针对DeepFashion2数据集所写，并将原始json中的object整合为XML的一个object，针对其他数据集的json转XML，可以参考修改。
+
 在命令行中调用`make_XML_from_JSON.py`：
 
 ```shell
-$ python make_XML_from_JSON.py --json_path ./raw_json/ --anno_path ./raw_annos/ --img_path ./raw_imgs/
+$ python make_XML_from_JSON.py \
+		--json_folder_path ./annos \
+		--img_folder_path ./image \
+		--save_dir ./test \
+		--object_name suit
 ```
-
-该命令的作用是：转换raw_json里的JSON文件为XML文件，保存到raw_annos里。XML文件中需要图像的w和h，因此还需要提供图片文件夹位置，这里是raw_imgs。
-
-![make_XML_from_JSON](./assets/make_XML_from_JSON.jpg)
-
+终端打印以下类似信息：
+```shell
+[INFO] Options: Namespace(img_folder_path='./image', json_folder_path='./annos', object_name='suit', save_dir='./test')
+[INFO] Creating save_dir: ./test, Done.
+[INFO] Converting JSON to XML: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 7697/7697 [01:53<00:00, 67.60it/s] 
+[INFO] Convert jsons to XMLs, Done.
+```
 可选参数列表：
+- json_folder_path：JSON文件夹位置
+- img_path：图片文件夹位置
+- save_dir：目标XML文件夹位置
+- object_name：物体标签名称
 
-- json_path：JSON文件夹位置
-- anno_path：目标XML文件夹位置
-- img_path：图片文件夹
 
 ### 标签统计与修改
 
@@ -130,15 +139,15 @@ $ python make_XML_from_JSON.py --json_path ./raw_json/ --anno_path ./raw_annos/ 
 
 ```shell
 $ python modify_XML_label.py \ 
-		--anno_path ./Annotations \
+		--anno_folder_path ./Annotations \
 		--stats
 ```
 
-终端打印以下信息：
+终端打印以下类似信息：
 
 ```shell
-[INFO] Options: Namespace(after_class=None, anno_path='./Annotations', before_classes=None, rename=False, stats=True)
-[INFO] Count Label: 100%|██████████████████████████████████████████████████████| 5533/5533 [01:46<00:00, 51.90it/s] 
+[INFO] Options: Namespace(after_class=None, anno_folder_path='./Annotations', before_classes=None, rename=False, stats=True)
+[INFO] Stats Label: 100%|██████████████████████████████████████████████████████| 5533/5533 [01:46<00:00, 51.90it/s] 
 [INFO] Label stats: {'head': 90839, 'safety_hat': 1532, 'mesh_hat': 4521, 'body_hat': 611}.
 ```
 
@@ -146,59 +155,115 @@ $ python modify_XML_label.py \
 
 ```shell
 $ python modify_XML_label.py \ 
-		--anno_path ./Annotations \
+		--anno_folder_path ./Annotations \
 		--rename \
 		--before_classes cigarette. cigarettee cigar \
 		--after_class cigarette
 ```
 
-终端打印以下信息：
+终端打印以下类似信息：
 
 ```shell
-[INFO] Options: Namespace(after_class=cigarette, anno_path='./Annotations', before_classes=['cigarette.', 'cigarettee', 'cigar'], rename=True, stats=False)
+[INFO] Options: Namespace(after_class=cigarette, anno_folder_path='./Annotations', before_classes=['cigarette.', 'cigarettee', 'cigar'], rename=True, stats=False)
 [INFO] Rename Label: 100%|█████████████████████████████████████████████████████| 5533/5533 [01:46<00:00, 51.90it/s] 
 [INFO] Label rename, Done.
 ```
 
 可选参数列表：
 
-- anno_path：XML文件位置
-- stats： 统计标签
-- rename：修改标签
+- anno_folder_path：XML文件夹位置
+- stats：统计标签
+- rename：修改标签(inplace)
 - before_classes：需要修改的标签
 - after_class：修改后的标签
 
 ### yolov5数据集生成和更新
 
-整理数据是一个麻烦的事情，包括数据的重命名、图片与标注要匹配对应、数据划分等等。更麻烦的是，项目经常会迭代更新，补充新的数据到数据集中。而且，yolov5的标签格式是专用的，需要通过XML计算得到txt文本。为了方便解决这些问题，设置raw_img和raw_anno文件夹，也就是不管是第一次生成数据集，还是补充新数据到数据集中，把图片和标注文件（文件夹亦可）一股脑分别放到这两个文件夹中，再调用命令，选择功能，来生成或更新数据集到指定的位置。
+整理数据是一个麻烦的事情，包括数据的重命名、图片与标注要匹配对应、数据划分等等。更麻烦的是，项目经常会迭代更新，补充新的数据到数据集中。而且，yolov5的标签格式是专用的，需要通过XML计算得到txt文本。为了方便解决这些问题，设置imgs和annos两个文件夹，也就是不管是第一次生成数据集，还是补充新数据到数据集中，把图片和标注文件（文件夹亦可）一股脑分别放到这两个文件夹中，再调用命令，选择功能，来生成或更新数据集到指定的位置。
 
 在命令行中调用`prepare_yolo_data.py`：
 
 ```shell
-python prepare_yolo_data.py --raw_img_path ./raw_imgs --raw_anno_path ./raw_annos --rename --split --label --plot --root_path ./cigarette/ --prefix /home/test/test_demo_wy/Data/cigarette/images/ --classes head cigarette --val_rate 0.05 --test_rate 0.05
+$ python prepare_yolo_data.py \
+		--img_folder_path ./imgs \
+		--anno_folder_path ./annos \
+		--save_dir ./test \
+		--rename \
+		--split \
+		--label \
+		--classes head safety_hat \
+		--prefix /path/to/your/save_dir/images/folder/when/training/ \
+		--plot \
+		--plot_num 20
+```
+终端打印以下类似信息：
+
+```shell
+[INFO] Options: Namespace(anno_folder_path='./annos', classes=['head', 'safety_hat'], img_folder_path='./imgs', label=True, plot=True, plot_num=20, prefix='home/user/Data/test/images/', 
+rename=True, save_dir='./test', seed=42, split=True, test_rate=0.05, train_rate=0.9, val_rate=0.05)
+[INFO] Match and Copy ./imgs, ./annos to ./test: 100%|█████████████████████████████████████████████████████████████████████████████████████████████| 1806/1806 [00:01<00:00, 1474.65it/s] 
+[INFO] Run Split Process!
+[INFO] txt file saved! split is done.
+[INFO] Run Label Process!
+[INFO] Convertor runs from train.txt: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 3251/3251 [00:06<00:00, 489.63it/s] 
+[INFO] Convertor runs from val.txt: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 180/180 [00:00<00:00, 477.43it/s]
+[INFO] Convertor runs from test.txt: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 181/181 [00:00<00:00, 504.08it/s]
+[INFO] Data convert done!
+[INFO] Plot done!
 ```
 
-该命令的作用是：首先将raw_imgs里包含的图片和raw_annos里包含的标注文件匹配，匹配成功后重命名，复制粘贴到cigarette/images文件夹和cigarette/Annotations文件夹中，接着对图片和标准进行划分，比例为0.9∶0.05∶0.05，划分完毕后，每个XML文件分别生成yolov5所用的label格式（只关注head和cigarette两类）。而在train.txt、val.txt、test.txt中，每条说明图片位置的记录的格式为prefix+图片名，例如/home/test/test_demo_wy/Data/cigarette/images/1.jpg。
-
-![prepare_yolo_data](./assets/prepare_yolo_data.jpg)
-
 可选参数列表：
-
-- raw_img_path：原始（或补充）的图片文件夹
-- raw_anno_path：原始（或补充）的标注文件夹
-- rename：是否对图片重命名，这是考虑到原始图片可能会有重复名字，在复制粘贴到数据集位置时，可能会因为重名导致图片遗漏
-- split：是否划分数据集
-- label：是否将XML文件的标注信息转为yolov5所用的格式
-- plot：是否在数据集生成或更新完毕后，在图片上绘制Bounding Box并保存
-- plot_num：绘制Bounding Box的图片的数量
+- img_folder_path：原始（或补充）的图片文件夹
+- anno_folder_path：原始（或补充）的标注文件夹
+- save_dir：生成后/更新时的数据集位置
+- rename：是否对本次的图片重命名，这是考虑到原始图片可能会有重复名字，在复制粘贴到数据集位置时，可能会因为重名导致图片覆盖，从0.jpg开始递增命名
+- split：是否划分数据集为训练集、验证集、测试集
 - train_rate：训练集比例
 - val_rate：验证集比例
 - test_rate：测试集比例
+- label：是否将XML文件的标注信息转为yolov5所用的格式，保存为txt文件
+- prefix：前缀，yolov5所用数据集中必须包含train.txt、val.txt、test.txt三个文本文件，里面要注明图片的位置，建议用绝对路径，文本文件里每行就是prefix+图片名，prefix本质上就是save_dir的绝对路径+images/
+- classes：XML文件可能包含多个类别信息，但我们可能只关心其中的某几类，才需要生成对应的label文本文件
+- plot：是否在数据集生成或更新完毕后，在一些图片上绘制Bounding Box并保存
+- plot_num：绘制Bounding Box的图片的数量
 - seed：随机划分时种子
-- root_path：生成后/更新时的数据集位置
-- prefix：前缀，yolov5所用数据集中必须包含train.txt、val.txt、test.txt三个文本文件，里面要注明图片的位置，建议用绝对路径，因此文本文件里每个图片的位置就是prefix+图片名
-- classes：XML文件可能包含多个类别信息，但我们可能只关心其中的某一些，只有这些才需要生成对应的label文本文件
 
+rename、split、label、plot、四个基本功能可以组合使用，也可以单独使用。数据集格式：
+```text
+/home/user/Data/test/
+├── Annotations
+│   ├── 0.xml
+│   ├── 1.xml
+│   └── 2.xml
+├── images
+│   ├── 0.jpg
+│   ├── 1.jpg
+│   └── 2.jpg
+├── ImageSets
+│   ├── test.txt
+│   ├── train.txt
+│   └── val.txt
+├── labels
+│   ├── 0.txt
+│   ├── 1.txt
+│   └── 2.txt
+├── test.txt
+├── train.txt
+├──── home/user/Data/test/images/0.jpg
+├──── home/user/Data/test/images/1.jpg
+├──── home/user/Data/test/images/2.jpg
+└── val.txt
+```
+数据集生成完毕后，在yolov5训练所需的yaml文件中，填好相应的txt文件地址即可开始训练：
+```yaml
+train: /home/user/Data/test/train.txt
+val: /home/user/Data/test/val.txt
+test: /home/user/Data/test/test.txt
+# number of classes
+nc: 4
+# class names
+names: ['head', 'safety_hat', 'mesh_hat', 'body_hat']
+```
 ## 更新日志
 
 [2023/05/30] 创建Repo，更新README
@@ -207,6 +272,8 @@ python prepare_yolo_data.py --raw_img_path ./raw_imgs --raw_anno_path ./raw_anno
 
 [2023/06/20] 更新README，完善裁剪物体图片代码
 
-## TODO：完善yolov5数据集生成和更新的代码
+[2023/08/02] 更新README，完善yolov5数据集生成和更新、标注格式转换的代码
+
+## TODO：增加更多功能
 
 ## 如果本项目对您有帮助，欢迎点一个:star:！欢迎提出ISSUES，共同完善项目！

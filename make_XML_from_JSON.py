@@ -43,20 +43,16 @@ class XMLGenerator(object):
         self.create_text_node("ymax", str(info_dict.pop("ymax")), box_node)
 
     def save_xml(self):
-        if not os.path.exists(os.path.split(self.xml_name)[0]):
-            os.mkdir(os.path.split(self.xml_name)[0])
         f = open(self.xml_name, "w")
         self.doc.writexml(f, addindent="\t", newl="\n")
         f.close()
-    
+
 
 def make_xml(xml_path, object: dict):
     xml_generator = XMLGenerator(xml_path)
     # xml root node
     node_root = xml_generator.create_append_node('annotation')
-    xml_generator.create_text_node(node_name='folder', node_value=object['folder'], root_node=node_root)
     xml_generator.create_text_node(node_name='filename', node_value=object['filename'], root_node=node_root)
-    xml_generator.create_text_node(node_name='database', node_value=object['database'], root_node=node_root)
     # size
     node_size = xml_generator.create_append_node('size', root_node=node_root)
     xml_generator.create_text_node(node_name='height', node_value=str(object['height']), root_node=node_size)
@@ -69,22 +65,21 @@ def make_xml(xml_path, object: dict):
 
 
 def parse_json(opt):
-    json_paths = glob.glob(opt.json_path + '*.json')
-    for j_p in tqdm(json_paths, desc='Converting JSON to XML'):
-        xml_path = opt.anno_path + os.path.split(j_p)[1].replace('.json', '.xml')
-        img_path = opt.img_path + os.path.split(j_p)[1].replace('.json', '.jpg')
+    json_paths = glob.glob(os.path.join(opt.json_folder_path, '*.json'))
+    for j_p in tqdm(json_paths, desc='[INFO] Converting JSON to XML'):
+        xml_path = os.path.join(opt.save_dir, os.path.split(j_p)[1].replace('.json', '.xml'))
+        img_path = os.path.join(opt.img_folder_path, os.path.split(j_p)[1].replace('.json', '.jpg'))
         img = Image.open(img_path)
         w, h = img.size
         minX, minY, maxX, maxY = 1e9, 1e9, 0, 0
         with open(j_p, 'r') as j_f:
             json_content = json.load(j_f)
-            object_dict = {'folder': 'VoMont_Sanitation_suit', 'filename': os.path.split(j_p)[1].replace('.json', '.jpg'), 'database': 'DeepFashion2',
+            object_dict = {'filename': os.path.split(j_p)[1].replace('.json', '.jpg'),
                            'width': w, 'height': h, 'depth': 3}
             for i in range(1, 3):
                 item_i = 'item' + str(i)
                 if item_i in json_content.keys():
                     item = json_content[item_i]
-                    # name = item['category_name']
                     bbox = item['bounding_box']
                     if bbox[0] < minX:
                         minX = bbox[0]
@@ -94,21 +89,25 @@ def parse_json(opt):
                         maxX = bbox[2]
                     if bbox[3] > maxY:
                         maxY = bbox[3]
-            object_dict['name'] = 'suit'
+            object_dict['name'] = opt.object_name
             object_dict['xmin'] = minX
             object_dict['ymin'] = minY
             object_dict['xmax'] = maxX
             object_dict['ymax'] = maxY
             make_xml(xml_path, object_dict)
-            # print(json.dumps(json_content, indent=4))
     return 0
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--json_path', type=str, default='./raw_json/', help='source path of jsons')
-    parser.add_argument('--anno_path', type=str, default='./raw_annos/', help='dst path of annos')
-    parser.add_argument('--img_path', type=str, default='./raw_imgs/', help='dst path of imgs')
-    
+    parser.add_argument('--json_folder_path', type=str, default=None, required=True, help='folder path of jsons.')
+    parser.add_argument('--img_folder_path', type=str, default=None, required=True, help='folder path of imgs.')
+    parser.add_argument('--save_dir', type=str, default=None, required=True, help='save path of xmls converted from jsons.')
+    parser.add_argument('--object_name', type=str, default=None, required=True, help='object name in xml.')
     opt = parser.parse_args()
+    print(f"[INFO] Options: {opt}")
+    if not os.path.exists(opt.save_dir):
+        os.mkdir(opt.save_dir)
+        print(f"[INFO] Creating save_dir: {opt.save_dir}, Done.")
     parse_json(opt)
+    print(f"[INFO] Convert jsons to XMLs, Done.")
